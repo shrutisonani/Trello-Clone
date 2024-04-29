@@ -24,13 +24,22 @@
         <v-card-actions class="text-center">
           <v-btn
             class="login-button"
-            @click=""
+            @click="login"
             depressed
             large
             >Login</v-btn
           >
         </v-card-actions>
       </v-card>
+      <v-snackbar
+        :timeout="4000"
+        v-model="snackbar"
+        absolute
+        bottom
+        center
+      >
+        {{ snackbarText }}
+      </v-snackbar>
 
     </v-col>
   </v-row>
@@ -39,18 +48,29 @@
 <script>
 export default {
   name: "SignInPage",
+  layout: 'signin',
   data(){
     return {
+      snackbar: false,
+      snackbarText: 'No error message',
       auth: {
         email: '',
         password: ''
       }
-
+    }
+  },
+  methods: {
+    login() {
+      let that = this
+      this.$fire.auth.signInWithEmailAndPassword(this.auth.email, this.auth.password)
+      .catch(function (error) {
+        that.snackbarText = error.message
+        that.snackbar = true
+      }).then((user) => {
+        //we are signed in
+        $nuxt.$router.push('/')
+      })
     }
   }
 }
 </script>
-
-<style>
-
-</style>

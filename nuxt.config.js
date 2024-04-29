@@ -1,4 +1,4 @@
-import colors from "vuetify/es5/util/colors";
+import dotenv from "dotenv"; dotenv.config();
 
 export default {
   // Disable server-side rendering: https://go.nuxtjs.dev/ssr-mode
@@ -44,30 +44,36 @@ export default {
   ],
 
   // Modules: https://go.nuxtjs.dev/config-modules
-  modules: [],
-  // modules: [
-  //   '@nuxtjs/pwa',
-  //   [
-  //     '@nuxtjs/firebase',
-  //     {
-  //       config: {
-  //         //add your firebase project config here
-  //     },
-  //     services: {
-  //       auth: {
-  //         persistence: 'local', // default
-  //         initialize: {
-  //           onAuthStateChangedAction: 'onAuthStateChangedAction',
-  //           subscribeManually: false
-  //         },
-  //         ssr: false,
-  //       },
-  //       firestore: true,
-  //       storage: true
-  //     }
-  //     }
-  //   ]
-  // ],
+  modules: [
+    '@nuxtjs/pwa',
+    [
+      '@nuxtjs/firebase',
+      {
+        config: {
+          apiKey: process.env.apiKey,
+          authDomain: process.env.authDomain,
+          projectId: process.env.projectId,
+          storageBucket: process.env.storageBucket,
+          messagingSenderId: process.env.messagingSenderId,
+          appId: process.env.appId,
+          measurementId: process.env.measurementId
+        },
+        services: {
+          auth: {
+            persistence: 'local', // default
+            initialize: {
+              onAuthStateChangedAction: 'onAuthStateChangedAction',
+              subscribeManually: false
+            },
+            ssr: false, // default
+          }, // Just as example. Can be any other service.
+          firestore: true,
+          storage: true
+        }
+      }
+    ]
+  ],
+
 
   // PWA module configuration: https://go.nuxtjs.dev/pwa
   pwa: {
