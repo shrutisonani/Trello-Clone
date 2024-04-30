@@ -55,6 +55,36 @@
           >Add card</v-btn
         >
       </div>
+      <!-- create card dialog  -->
+       <v-dialog v-model="dialogCard" persistent max-width="600px">
+        <v-card elevation="0">
+          <v-card-title>
+            <span class="headline">Card name</span>
+          </v-card-title>
+          <v-card-text>
+            <v-container>
+              <v-row>
+                <v-col cols="12">
+                  <v-text-field
+                    label="Stuff to do"
+                    v-model="card.title"
+                    required
+                  ></v-text-field>
+                </v-col>
+              </v-row>
+            </v-container>
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn color="blue darken-1" text @click="dialogCard = false">
+              Close
+            </v-btn>
+            <v-btn color="blue darken-1" text @click="createCard()">
+              Save
+            </v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
       <div class="d-flex flex-row">
         <v-btn depressed @click="dialog = true" class="create-list"
           >Create new list</v-btn
@@ -90,6 +120,38 @@
           </v-card>
         </v-dialog>
       </div>
+      <v-dialog v-model="dialogEditCard" persistent max-width="600px">
+        <v-card elevation="0">
+          <v-card-title>
+            <span class="headline">{{ currentCard.title }}</span>
+          </v-card-title>
+          <v-card-text>
+            <v-container>
+              <v-row>
+                <v-col cols="12">
+                  <v-text-field
+                    label="Edit title"
+                    v-model="currentCard.title"
+                    required
+                  ></v-text-field>
+                </v-col>
+              </v-row>
+            </v-container>
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn color="red darken-1" text @click="deleteCard()">
+              Delete
+            </v-btn>
+            <v-btn color="blue darken-1" text @click="dialogEditCard = false">
+              Close
+            </v-btn>
+            <v-btn color="blue darken-1" text @click="updateCard()">
+              Save
+            </v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
     </div>
   </div>
 </template>
@@ -232,6 +294,103 @@ export default {
       if(index > -1) {
         that.board.lists.splice(index, 1)
         await that.updateBoard()
+      }
+    },
+    async createCard(){
+       let that = this
+      that.dialogCard = false
+      //show modal to capture card name
+      //add card
+      if (that.card.title != '') {
+        //add to firebase
+        //Let's give our card a created date.
+        that.card.id = uuidv4()
+        that.card.dateCreated = Date.now()
+        that.card.listId = that.listId
+        if (that.board.lists) {
+          let index = -1
+          let count = 0
+          for (const list of that.board.lists) {
+            if (list.id === that.listId) {
+              index = count
+            }
+            count++
+          }
+          if (index != -1) {
+            //we found the list, now push our card
+            if (that.board.lists[index].cards) {
+              that.board.lists[index].cards.push(that.card)
+            } else {
+              that.board.lists[index].cards = []
+              that.board.lists[index].cards.push(that.card)
+            }
+          }
+        }
+        await that.updateBoard()
+        that.card = {}
+        that.listId = ''
+      }
+    },
+    editCard(card){
+      this.dialogEditCard = true
+      this.currentCard = card
+    },
+    async updateCard() {
+      let that = this
+      that.dialogEditCard = false
+      for (const list of that.board.lists) {
+        if (that.currentCard.listId === list.id) {
+          //correct list, now find card
+          for (let card of list.cards) {
+            if (card.id === that.currentCard.id) {
+              card = that.currentCard
+            }
+          }
+        }
+      }
+      await that.updateBoard()
+    },
+    async deleteCard() {
+      let that = this
+      that.dialogEditCard = false
+      let i = 0
+      let j = 0
+      let index = {
+        list: -1,
+        card: -1,
+      }
+      for (const list of that.board.lists) {
+        if (that.currentCard.listId === list.id) {
+          //correct list, now find card
+          for (const card of list.cards) {
+            if (card.id === that.currentCard.id) {
+              index.list = i
+              index.card = j
+            }
+            j++
+          }
+        }
+        i++
+      }
+      if (index.list > -1) {
+        that.board.lists[index.list].cards.splice(index.card, 1)
+        await that.updateBoard()
+      }
+    },
+    async deleteBoard() {
+      let that = this
+      try {
+        await that.$fire.firestore
+        .collection('users')
+        .doc(that.$fire.auth.currentUser.uid)
+        .collection('boards')
+        .doc(that.board.id).delete().then(() => {
+          $nuxt.$router.push('/')
+        }).catch(() => {
+
+        })
+      } catch (error) {
+        $nuxt.$router.push('/')
       }
     },
     async updateBoard() {
